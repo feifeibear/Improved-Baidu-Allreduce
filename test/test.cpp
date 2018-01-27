@@ -8,7 +8,6 @@
 #include <iostream>
 #include <vector>
 
-<<<<<<< HEAD
 void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterations) {
     // Initialize on CPU (no GPU device ID).
     InitCollectives(NO_DEVICE);
@@ -75,8 +74,7 @@ void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterat
 
             float* output;
             timer.start();
-            output = new float[size];
-            MPI_Allreduce(data, output, size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            RingAllreduce(data, size, &output);
             seconds += timer.seconds();
 
             // Check that we get the expected result.
@@ -101,10 +99,6 @@ void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterat
 
 }
 
-
-
-=======
->>>>>>> 2196657cdaa07850eac9ad793771af2254173d56
 void TestCollectivesCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterations) {
     // Initialize on CPU (no GPU device ID).
     InitCollectives(NO_DEVICE);
@@ -144,11 +138,6 @@ void TestCollectivesCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterati
                 }
             }
             delete[] output;
-<<<<<<< HEAD
-
-            //test for MPI
-=======
->>>>>>> 2196657cdaa07850eac9ad793771af2254173d56
         }
         if(mpi_rank == 0) {
             std::cout << "Verified allreduce for size "
