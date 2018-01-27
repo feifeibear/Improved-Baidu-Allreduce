@@ -8,6 +8,100 @@
 #include <iostream>
 #include <vector>
 
+void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterations) {
+    // Initialize on CPU (no GPU device ID).
+    InitCollectives(NO_DEVICE);
+
+    // Get the MPI size and rank.
+    int mpi_size;
+    if(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size) != MPI_SUCCESS)
+        throw std::runtime_error("MPI_Comm_size failed with an error");
+
+    int mpi_rank;
+    if(MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank) != MPI_SUCCESS)
+        throw std::runtime_error("MPI_Comm_rank failed with an error");
+
+    timer::Timer timer;
+    for(size_t i = 0; i < sizes.size(); i++) {
+        auto size = sizes[i];
+        auto iters = iterations[i];
+
+        float* data = new float[size];
+        float seconds = 0.0f;
+        for(size_t iter = 0; iter < iters; iter++) {
+            // Initialize data as a block of ones, which makes it easy to check for correctness.
+            for(size_t j = 0; j < size; j++) {
+                data[j] = 1.0f;
+            }
+
+            float* output;
+            timer.start();
+            output = new float[size];
+            MPI_Allreduce(data, output, size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            seconds += timer.seconds();
+
+            // Check that we get the expected result.
+            for(size_t j = 0; j < size; j++) {
+                if(output[j] != (float) mpi_size) {
+                    std::cerr << "Unexpected result from allreduce: " << data[j] << std::endl;
+                    return;
+                }
+            }
+            delete[] output;
+        }
+        if(mpi_rank == 0) {
+            std::cout << "Verified MPI allreduce for size "
+                << size
+                << " ("
+                << seconds / iters
+                << " per iteration)" << std::endl;
+        }
+
+        delete[] data;
+    }
+
+    for(size_t i = 0; i < sizes.size(); i++) {
+        auto size = sizes[i];
+        auto iters = iterations[i];
+
+        float* data = new float[size];
+        float seconds = 0.0f;
+        for(size_t iter = 0; iter < iters; iter++) {
+            // Initialize data as a block of ones, which makes it easy to check for correctness.
+            for(size_t j = 0; j < size; j++) {
+                data[j] = 1.0f;
+            }
+
+            float* output;
+            timer.start();
+            output = new float[size];
+            MPI_Allreduce(data, output, size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            seconds += timer.seconds();
+
+            // Check that we get the expected result.
+            for(size_t j = 0; j < size; j++) {
+                if(output[j] != (float) mpi_size) {
+                    std::cerr << "Unexpected result from allreduce: " << data[j] << std::endl;
+                    return;
+                }
+            }
+            delete[] output;
+        }
+        if(mpi_rank == 0) {
+            std::cout << "Verified MPI allreduce for size "
+                << size
+                << " ("
+                << seconds / iters
+                << " per iteration)" << std::endl;
+        }
+
+        delete[] data;
+    }
+
+}
+
+
+
 void TestCollectivesCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterations) {
     // Initialize on CPU (no GPU device ID).
     InitCollectives(NO_DEVICE);
@@ -47,6 +141,8 @@ void TestCollectivesCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterati
                 }
             }
             delete[] output;
+
+            //test for MPI
         }
         if(mpi_rank == 0) {
             std::cout << "Verified allreduce for size "
@@ -159,7 +255,7 @@ int main(int argc, char** argv) {
 
     // Buffer sizes used for tests.
     std::vector<size_t> buffer_sizes = {
-        0, 32, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 8388608, 67108864, 536870912
+        32, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 8388608, 67108864, 536870912
     };
 
     // Number of iterations to run for each buffer size.
@@ -171,7 +267,8 @@ int main(int argc, char** argv) {
 
     // Test on either CPU and GPU.
     if(input == "cpu") {
-        TestCollectivesCPU(buffer_sizes, iterations);
+//        TestCollectivesCPU(buffer_sizes, iterations);
+        TestMPIAllreduceCPU(buffer_sizes, iterations);
     } else if(input == "gpu") {
         TestCollectivesGPU(buffer_sizes, iterations);
     } else {
