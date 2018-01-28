@@ -1,3 +1,6 @@
+# `Improvement Allreduce`
+Improve BaiduAllreduce for large-scale DNN.
+
 # `baidu-allreduce`
 
 `baidu-allreduce` is a small C++ library, demonstrating the ring allreduce and

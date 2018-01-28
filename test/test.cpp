@@ -36,8 +36,9 @@ void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterat
 
             float* output;
             timer.start();
-            output = new float[size];
-            MPI_Allreduce(data, output, size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            //output = new float[size];
+            //MPI_Allreduce(data, output, size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+            TreeAllreduce(data, size, &output);
             seconds += timer.seconds();
 
             // Check that we get the expected result.
@@ -50,7 +51,7 @@ void TestMPIAllreduceCPU(std::vector<size_t>& sizes, std::vector<size_t>& iterat
             delete[] output;
         }
         if(mpi_rank == 0) {
-            std::cout << "Verified MPI allreduce for size "
+            std::cout << "Verified binominal Tree allreduce for size "
                 << size
                 << " ("
                 << seconds / iters
@@ -250,7 +251,7 @@ int main(int argc, char** argv) {
 
     // Buffer sizes used for tests.
     std::vector<size_t> buffer_sizes = {
-        32, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 8388608, 67108864, 536870912
+        0, 32, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 8388608, 67108864, 536870912
     };
 
     // Number of iterations to run for each buffer size.

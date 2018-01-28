@@ -372,9 +372,11 @@ void TreeAllreduce(float* data, size_t length, float** output_ptr) {
     float* output = alloc(length);
     *output_ptr =  output;
 
+    MPI_Status recv_status;
+    MPI_Request recv_req;
     // What type of data is being sent
     MPI_Datatype datatype = MPI_FLOAT;
-    copy(data, output, length);
+    copy(output, data, length);
 
     //reduce
     for(int step = size/2; step >= 1; step /= 2) {
@@ -389,7 +391,7 @@ void TreeAllreduce(float* data, size_t length, float** output_ptr) {
       if(rank < step) {
         int recv_from = rank + step;
         MPI_Recv(buffer, length,
-                datatype, recv_from, 0, MPI_COMM_WORLD);
+                datatype, recv_from, 0, MPI_COMM_WORLD, &recv_status);
         reduce(output, buffer, length);
       }
     }
@@ -399,7 +401,7 @@ void TreeAllreduce(float* data, size_t length, float** output_ptr) {
       if(rank >= step && rank < step*2) {
         int recv_from = rank - step;
         MPI_Recv(output, length,
-                datatype, recv_from, 0, MPI_COMM_WORLD);
+                datatype, recv_from, 0, MPI_COMM_WORLD, &recv_status);
       }
       //send
       if(rank < step) {

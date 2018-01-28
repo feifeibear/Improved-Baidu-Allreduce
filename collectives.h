@@ -32,4 +32,6 @@ void RingAllreduce(float* data, size_t length, float** output);
 // written into `output`.
 void RingAllgather(float* data, size_t length, float** output);
 
+
+void TreeAllreduce(float* data, size_t length, float** output_ptr);
 #endif /* ifndef BAIDU_ALLREDUCE_COLLECTIVES_H_ */

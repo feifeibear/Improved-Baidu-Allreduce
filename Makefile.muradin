@@ -17,7 +17,7 @@ all: $(EXE_NAME)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 %.o: %.cu
-	$(NVCC) -std=c++11 -c $(CFLAGS) $< -o $@
+	$(NVCC) -c $(CFLAGS) $< -o $@
 
 $(EXE_NAME): $(OBJS)
 	$(CC) -o $(EXE_NAME) $(LDFLAGS) $^ $(LDFLAGS)
