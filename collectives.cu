@@ -343,6 +343,74 @@ void RingAllreduce(float* data, size_t length, float** output_ptr) {
     dealloc(buffer);
 }
 
+/***
+  * AllReduce with latency efficient way
+  * T = logP(alpha + n*beta) 
+  ***/
+void TreeAllreduce(float* data, size_t length, float** output_ptr) {
+    // Get MPI size and rank.
+    int rank;
+    int mpi_error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(mpi_error != MPI_SUCCESS)
+        throw std::runtime_error("MPI_Comm_rank failed with an error");
+
+    int size;
+    mpi_error = MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if(mpi_error != MPI_SUCCESS)
+        throw std::runtime_error("MPI_Comm_size failed with an error");
+
+    // Check that the lengths given to every process are the same.
+    std::vector<size_t> lengths = AllgatherInputLengths(size, length);
+    for(size_t other_length : lengths) {
+        if(length != other_length) {
+            throw std::runtime_error("RingAllreduce received different lengths");
+        }
+    }
+    //TODO only work for log2
+    // Allocate the output buffer.
+    float* buffer = alloc(length);
+    float* output = alloc(length);
+    *output_ptr =  output;
+
+    // What type of data is being sent
+    MPI_Datatype datatype = MPI_FLOAT;
+    copy(data, output, length);
+
+    //reduce
+    for(int step = size/2; step >= 1; step /= 2) {
+      //send process
+      if(rank >= step && rank < step*2) {
+        int send_to = rank - step;
+        MPI_Send(output, length,
+                datatype, send_to, 0, MPI_COMM_WORLD);
+
+      }
+      //recv process
+      if(rank < step) {
+        int recv_from = rank + step;
+        MPI_Recv(buffer, length,
+                datatype, recv_from, 0, MPI_COMM_WORLD);
+        reduce(output, buffer, length);
+      }
+    }
+    //gather
+    for(int step = 1; step <= size/2; step *= 2) {
+      //recv
+      if(rank >= step && rank < step*2) {
+        int recv_from = rank - step;
+        MPI_Recv(output, length,
+                datatype, recv_from, 0, MPI_COMM_WORLD);
+      }
+      //send
+      if(rank < step) {
+        int send_to = rank + step;
+        MPI_Send(output, length,
+                datatype, send_to, 0, MPI_COMM_WORLD);
+      }
+    }
+    dealloc(buffer);
+}
+
 // The ring allgather. The lengths of the data chunks passed to this function
 // may differ across different devices. The output memory will be allocated and
 // written into `output`.
